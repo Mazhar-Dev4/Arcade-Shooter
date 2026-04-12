@@ -1,3 +1,6 @@
+import { TargetVariant } from './targetTypes';
+import { WeaponId } from './weapons';
+
 export type GameMode = 'classic' | 'survival' | 'daily';
 export type GameScreen = 'home' | 'playing' | 'gameover' | 'leaderboard' | 'settings';
 export type ThemeColor = 'blue' | 'purple' | 'pink';
@@ -11,7 +14,13 @@ export interface Target {
   spawnTime: number;
   lifetime: number;
   color: string;
+  glowColor: string;
   hit?: boolean;
+  variant: TargetVariant;
+  hitsRemaining: number;
+  icon: string;
+  vx: number;
+  vy: number;
 }
 
 export interface GameStats {
@@ -25,6 +34,10 @@ export interface GameStats {
   accuracy: number;
   avgReactionTime: number;
   grade: string;
+  weaponUsed: WeaponId;
+  timeElapsed: number;
+  waveReached: number;
+  targetsDestroyed: number;
 }
 
 export interface LeaderboardEntry {
@@ -35,12 +48,15 @@ export interface LeaderboardEntry {
   grade: string;
   date: string;
   mode: GameMode;
+  weapon?: WeaponId;
 }
 
 export interface GameSettings {
   soundEnabled: boolean;
+  musicEnabled: boolean;
   themeColor: ThemeColor;
   roundDuration: RoundDuration;
+  selectedWeapon: WeaponId;
 }
 
 export const THEME_COLORS: Record<ThemeColor, { hue: string; class: string }> = {
