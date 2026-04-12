@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Target as TargetType, GameMode } from '@/lib/gameTypes';
 import { Weapon } from '@/lib/weapons';
 import { GameTarget } from '@/components/game/GameTarget';
 import { HUD } from '@/components/game/HUD';
 import { Crosshair } from '@/components/game/Crosshair';
+import { WeaponDisplay } from '@/components/game/WeaponDisplay';
 
 interface Props {
   targets: TargetType[];
@@ -36,6 +37,8 @@ export const GameScreen: React.FC<Props> = ({
   hitEffects, shootingEffects, screenShake, onFire, firing,
 }) => {
   const [isMobile] = useState(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const [lastTouchPos, setLastTouchPos] = useState<{ x: number; y: number } | null>(null);
+  const touchIdRef = useRef(0);
 
   const handleBgClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -49,9 +52,20 @@ export const GameScreen: React.FC<Props> = ({
     if ((e.target as HTMLElement).closest('[data-hud]')) return;
     const touch = e.touches[0];
     if (touch) {
-      onFire(touch.clientX, touch.clientY);
+      const pos = { x: touch.clientX, y: touch.clientY };
+      setLastTouchPos({ ...pos });
+      touchIdRef.current++;
+      onFire(pos.x, pos.y);
       onMissTap();
     }
+  };
+
+  const handleTargetHit = (id: string, x?: number, y?: number) => {
+    if (x !== undefined && y !== undefined) {
+      setLastTouchPos({ x, y });
+      touchIdRef.current++;
+    }
+    onHitTarget(id);
   };
 
   return (
@@ -88,14 +102,25 @@ export const GameScreen: React.FC<Props> = ({
 
       {!isPaused && targets.map(t => (
         <GameTarget key={t.id} target={t} onHit={(id) => {
-          const rect = document.querySelector(`[data-target="${id}"]`);
-          onHitTarget(id);
+          // Get target position for mobile crosshair
+          const el = document.querySelector(`[data-target="${id}"]`) as HTMLElement;
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            handleTargetHit(id, rect.left + rect.width / 2, rect.top + rect.height / 2);
+          } else {
+            handleTargetHit(id);
+          }
         }} />
       ))}
 
       {hitEffects}
       {shootingEffects}
-      <Crosshair weapon={weapon} firing={firing} isMobile={isMobile} />
+
+      {/* Weapon display at bottom */}
+      <WeaponDisplay weapon={weapon} firing={firing} isMobile={isMobile} />
+
+      {/* Crosshair - works on both desktop and mobile */}
+      <Crosshair weapon={weapon} firing={firing} isMobile={isMobile} lastTouchPos={lastTouchPos} />
     </div>
   );
 };
