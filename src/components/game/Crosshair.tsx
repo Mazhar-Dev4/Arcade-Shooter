@@ -5,9 +5,10 @@ interface Props {
   weapon: Weapon;
   firing: boolean;
   isMobile: boolean;
+  lastTouchPos?: { x: number; y: number } | null;
 }
 
-export const Crosshair: React.FC<Props> = ({ weapon, firing, isMobile }) => {
+export const Crosshair: React.FC<Props> = ({ weapon, firing, isMobile, lastTouchPos }) => {
   const [pos, setPos] = useState({ x: -100, y: -100 });
   const [visible, setVisible] = useState(false);
 
@@ -26,47 +27,66 @@ export const Crosshair: React.FC<Props> = ({ weapon, firing, isMobile }) => {
     };
   }, [isMobile, handleMove]);
 
-  if (isMobile || !visible) return null;
+  // On mobile, show crosshair at last touch position briefly
+  const [mobileVisible, setMobileVisible] = useState(false);
+  const [mobilePos, setMobilePos] = useState({ x: 0, y: 0 });
 
-  const size = 48;
+  useEffect(() => {
+    if (!isMobile || !lastTouchPos) return;
+    setMobilePos({ x: lastTouchPos.x, y: lastTouchPos.y });
+    setMobileVisible(true);
+    const t = setTimeout(() => setMobileVisible(false), 400);
+    return () => clearTimeout(t);
+  }, [isMobile, lastTouchPos]);
+
+  const showDesktop = !isMobile && visible;
+  const showMobile = isMobile && mobileVisible;
+
+  if (!showDesktop && !showMobile) return null;
+
+  const currentPos = isMobile ? mobilePos : pos;
+  const size = isMobile ? 40 : 52;
   const recoilOffset = firing ? weapon.recoilStrength * 4 : 0;
+  const spread = firing ? 3 : 0;
 
   return (
     <div
       className="fixed pointer-events-none z-50"
       style={{
-        left: pos.x - size / 2,
-        top: pos.y - size / 2 - recoilOffset,
+        left: currentPos.x - size / 2,
+        top: currentPos.y - size / 2 - recoilOffset,
         width: size,
         height: size,
         transition: firing ? 'none' : 'transform 0.05s ease-out',
+        opacity: isMobile ? (mobileVisible ? 0.9 : 0) : 1,
       }}
     >
-      <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <svg width={size} height={size} viewBox="0 0 52 52" fill="none">
         {/* Outer ring */}
-        <circle cx="24" cy="24" r="18" stroke={weapon.color} strokeWidth="1.5" opacity={0.5}
-          style={{ filter: `drop-shadow(0 0 4px ${weapon.color})` }} />
-        {/* Inner ring */}
-        <circle cx="24" cy="24" r="8" stroke={weapon.color} strokeWidth="1" opacity={0.7}
+        <circle cx="26" cy="26" r="20" stroke={weapon.color} strokeWidth="1.5" opacity={0.4}
+          strokeDasharray="4 3"
           style={{ filter: `drop-shadow(0 0 6px ${weapon.color})` }} />
+        {/* Inner ring */}
+        <circle cx="26" cy="26" r={10 + spread} stroke={weapon.color} strokeWidth="1.5" opacity={0.7}
+          style={{ filter: `drop-shadow(0 0 8px ${weapon.color})`, transition: 'r 0.08s ease-out' }} />
         {/* Center dot */}
-        <circle cx="24" cy="24" r={firing ? 3 : 2} fill={weapon.color}
-          style={{ filter: `drop-shadow(0 0 8px ${weapon.color})`, transition: 'r 0.05s' }} />
-        {/* Crosshair lines */}
-        <line x1="24" y1="2" x2="24" y2="14" stroke={weapon.color} strokeWidth="1" opacity={0.6} />
-        <line x1="24" y1="34" x2="24" y2="46" stroke={weapon.color} strokeWidth="1" opacity={0.6} />
-        <line x1="2" y1="24" x2="14" y2="24" stroke={weapon.color} strokeWidth="1" opacity={0.6} />
-        <line x1="34" y1="24" x2="46" y2="24" stroke={weapon.color} strokeWidth="1" opacity={0.6} />
-        {/* Corner brackets */}
-        <path d="M6 18 L6 6 L18 6" stroke={weapon.color} strokeWidth="1" opacity={0.3} fill="none" />
-        <path d="M30 6 L42 6 L42 18" stroke={weapon.color} strokeWidth="1" opacity={0.3} fill="none" />
-        <path d="M42 30 L42 42 L30 42" stroke={weapon.color} strokeWidth="1" opacity={0.3} fill="none" />
-        <path d="M18 42 L6 42 L6 30" stroke={weapon.color} strokeWidth="1" opacity={0.3} fill="none" />
+        <circle cx="26" cy="26" r={firing ? 3.5 : 2} fill={weapon.color}
+          style={{ filter: `drop-shadow(0 0 10px ${weapon.color})`, transition: 'r 0.05s' }} />
+        {/* Crosshair lines with gap */}
+        <line x1="26" y1="2" x2="26" y2="14" stroke={weapon.color} strokeWidth="1.5" opacity={0.7} />
+        <line x1="26" y1="38" x2="26" y2="50" stroke={weapon.color} strokeWidth="1.5" opacity={0.7} />
+        <line x1="2" y1="26" x2="14" y2="26" stroke={weapon.color} strokeWidth="1.5" opacity={0.7} />
+        <line x1="38" y1="26" x2="50" y2="26" stroke={weapon.color} strokeWidth="1.5" opacity={0.7} />
+        {/* Corner ticks */}
+        <line x1="8" y1="8" x2="13" y2="13" stroke={weapon.color} strokeWidth="1" opacity={0.3} />
+        <line x1="44" y1="8" x2="39" y2="13" stroke={weapon.color} strokeWidth="1" opacity={0.3} />
+        <line x1="8" y1="44" x2="13" y2="39" stroke={weapon.color} strokeWidth="1" opacity={0.3} />
+        <line x1="44" y1="44" x2="39" y2="39" stroke={weapon.color} strokeWidth="1" opacity={0.3} />
       </svg>
       {/* Firing flash */}
       {firing && (
         <div className="absolute inset-0 rounded-full" style={{
-          background: `radial-gradient(circle, ${weapon.color}40 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${weapon.color}60 0%, transparent 60%)`,
           animation: 'muzzle-flash 0.1s ease-out',
         }} />
       )}

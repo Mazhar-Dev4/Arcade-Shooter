@@ -61,6 +61,7 @@ export const GameTarget: React.FC<Props> = ({ target, onHit }) => {
 
   return (
     <button
+      data-target={target.id}
       onMouseDown={handleClick}
       onTouchStart={handleClick}
       className="absolute rounded-full -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10 focus:outline-none group"
@@ -69,9 +70,12 @@ export const GameTarget: React.FC<Props> = ({ target, onHit }) => {
         top: pos.y,
         width: target.size,
         height: target.size,
+        // Larger touch area on mobile
+        minWidth: 44,
+        minHeight: 44,
         border: `${borderStyle} ${target.color}`,
         animation: `${animName} ${animDuration} ease-in-out ${state === 'alive' ? 'infinite' : 'forwards'}`,
-        boxShadow: `0 0 ${target.size * 0.3}px ${target.color}, 0 0 ${target.size * 0.8}px ${target.color}30`,
+        boxShadow: `0 0 ${target.size * 0.4}px ${target.color}, 0 0 ${target.size}px ${target.color}30, inset 0 0 ${target.size * 0.2}px ${target.color}20`,
         transition: state === 'damaged' ? 'transform 0.1s' : undefined,
         transform: state === 'damaged' ? 'translate(-50%, -50%) scale(0.85)' : undefined,
       }}

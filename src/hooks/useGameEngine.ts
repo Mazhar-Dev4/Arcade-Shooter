@@ -60,18 +60,19 @@ export function useGameEngine(
   const getDifficulty = useCallback(() => {
     const t = elapsedRef.current;
     const mode = modeRef.current;
-    const factor = mode === 'survival' ? t / 15 : t / 25;
+    // Much slower difficulty ramp so targets stay longer and players can aim
+    const factor = mode === 'survival' ? t / 30 : t / 45;
     const w = Math.floor(factor) + 1;
     if (w !== waveRef.current) {
       waveRef.current = w;
       setWave(w);
     }
     return {
-      minSize: Math.max(28, 65 - factor * 6),
-      maxSize: Math.max(38, 85 - factor * 5),
-      lifetime: Math.max(700, 2000 - factor * 150),
-      spawnInterval: Math.max(350, 1100 - factor * 80),
-      maxTargets: Math.min(6, 2 + Math.floor(factor * 0.4)),
+      minSize: Math.max(36, 70 - factor * 4),
+      maxSize: Math.max(50, 95 - factor * 4),
+      lifetime: Math.max(1800, 4000 - factor * 200),
+      spawnInterval: Math.max(600, 1500 - factor * 70),
+      maxTargets: Math.min(5, 2 + Math.floor(factor * 0.3)),
     };
   }, []);
 
