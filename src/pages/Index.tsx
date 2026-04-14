@@ -49,30 +49,30 @@ const Index: React.FC = () => {
     engine.start(mode, mode === 'daily' ? 60 : settings.roundDuration, settings.selectedWeapon);
   }, [engine, settings.roundDuration, settings.selectedWeapon, playButton]);
 
-  const handleFire = useCallback((x: number, y: number) => {
+  const handleMissShot = useCallback((shot: { originX: number; originY: number; targetX: number; targetY: number }) => {
     const now = Date.now();
     if (now - lastFireRef.current < weapon.fireRate) return;
     lastFireRef.current = now;
     playWeaponFire(weapon.id);
-    fireWeapon(weapon, x, y);
+    fireWeapon(weapon, shot.originX, shot.originY, shot.targetX, shot.targetY, false);
     setFiring(true);
     setTimeout(() => setFiring(false), 80);
-  }, [weapon, playWeaponFire, fireWeapon]);
+    engine.missTap();
+  }, [weapon, playWeaponFire, fireWeapon, engine]);
 
-  const handleHitTarget = useCallback((id: string) => {
+  const handleHitTarget = useCallback((id: string, shot: { originX: number; originY: number; targetX: number; targetY: number }) => {
     const now = Date.now();
-    if (now - lastFireRef.current < weapon.fireRate) {
-      lastFireRef.current = now;
-    }
+    if (now - lastFireRef.current < weapon.fireRate) return;
+    lastFireRef.current = now;
     playWeaponFire(weapon.id);
     setFiring(true);
     setTimeout(() => setFiring(false), 80);
 
     const result = engine.hitTarget(id);
+    fireWeapon(weapon, shot.originX, shot.originY, shot.targetX, shot.targetY, Boolean(result && result.points > 0));
     if (result) {
       const t = engine.targets.find(t => t.id === id);
       if (t) {
-        fireWeapon(weapon, window.innerWidth / 2, window.innerHeight, t.x, t.y);
         if (result.points > 0) {
           spawnHitEffect(t.x, t.y, result.points, t.color);
           triggerHitMarker(t.x, t.y, result.points, result.critical);
@@ -142,16 +142,16 @@ const Index: React.FC = () => {
           accuracy={accuracy}
           weapon={weapon}
           wave={engine.wave}
+          elapsedTime={engine.stats.timeElapsed}
           isPaused={engine.isPaused}
           onHitTarget={handleHitTarget}
-          onMissTap={engine.missTap}
+          onMissShot={handleMissShot}
           onPause={engine.togglePause}
           onToggleSound={() => setSettings(s => ({ ...s, soundEnabled: !s.soundEnabled }))}
           soundEnabled={settings.soundEnabled}
           hitEffects={<HitEffects />}
           shootingEffects={<EffectsLayer />}
           screenShake={screenShake}
-          onFire={handleFire}
           firing={firing}
         />
       )}

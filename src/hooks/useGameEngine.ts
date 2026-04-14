@@ -44,6 +44,7 @@ export function useGameEngine(
   const elapsedRef = useRef(0);
   const pausedRef = useRef(false);
   const pauseTimeRef = useRef(0);
+  const pauseStartedAtRef = useRef(0);
   const randRef = useRef<(() => number) | null>(null);
   const statsRef = useRef(emptyStats());
   const livesRef = useRef(3);
@@ -60,19 +61,20 @@ export function useGameEngine(
   const getDifficulty = useCallback(() => {
     const t = elapsedRef.current;
     const mode = modeRef.current;
-    // Much slower difficulty ramp so targets stay longer and players can aim
-    const factor = mode === 'survival' ? t / 30 : t / 45;
+    const compact = window.innerWidth < 768;
+    const factor = mode === 'survival' ? t / 38 : t / 52;
     const w = Math.floor(factor) + 1;
     if (w !== waveRef.current) {
       waveRef.current = w;
       setWave(w);
     }
     return {
-      minSize: Math.max(36, 70 - factor * 4),
-      maxSize: Math.max(50, 95 - factor * 4),
-      lifetime: Math.max(1800, 4000 - factor * 200),
-      spawnInterval: Math.max(600, 1500 - factor * 70),
-      maxTargets: Math.min(5, 2 + Math.floor(factor * 0.3)),
+      minSize: Math.max(compact ? 52 : 42, (compact ? 86 : 74) - factor * 3.2),
+      maxSize: Math.max(compact ? 74 : 58, (compact ? 112 : 96) - factor * 3.4),
+      lifetime: Math.max(compact ? 3200 : 2600, (compact ? 5600 : 5000) - factor * 180),
+      spawnInterval: Math.max(compact ? 900 : 760, (compact ? 1650 : 1450) - factor * 55),
+      maxTargets: Math.min(compact ? 4 : 5, 2 + Math.floor(factor * 0.24)),
+      speedScale: compact ? 0.78 : 0.92,
     };
   }, []);
 
@@ -90,11 +92,11 @@ export function useGameEngine(
       const size = baseSize * config.sizeMultiplier;
       const padding = size / 2 + 10;
       const x = padding + rand() * (window.innerWidth - padding * 2);
-      const yMin = 70;
-      const yMax = window.innerHeight - 70;
+      const yMin = 110;
+      const yMax = window.innerHeight - (window.innerWidth < 768 ? 160 : 130);
       const y = yMin + rand() * Math.max(yMax - yMin, 100);
 
-      const speed = (0.3 + rand() * 0.5) * config.speedMultiplier;
+      const speed = (0.2 + rand() * 0.32) * config.speedMultiplier * diff.speedScale;
       const angle = rand() * Math.PI * 2;
 
       const target: Target = {
@@ -128,6 +130,8 @@ export function useGameEngine(
     pausedRef.current = false;
     waveRef.current = 1;
     idCounter = 0;
+    pauseTimeRef.current = 0;
+    pauseStartedAtRef.current = 0;
 
     if (mode === 'daily') {
       randRef.current = seededRandom(dailySeed());
@@ -302,10 +306,9 @@ export function useGameEngine(
     pausedRef.current = !pausedRef.current;
     setIsPaused(pausedRef.current);
     if (pausedRef.current) {
-      pauseTimeRef.current = Date.now();
+      pauseStartedAtRef.current = Date.now();
     } else {
-      const pauseDuration = Date.now() - pauseTimeRef.current;
-      startTimeRef.current += pauseDuration;
+      pauseTimeRef.current += Date.now() - pauseStartedAtRef.current;
     }
   }, []);
 

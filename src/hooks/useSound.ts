@@ -7,10 +7,13 @@ export function useSound() {
 
   const getCtx = useCallback(() => {
     if (!ctxRef.current) ctxRef.current = new AudioContext();
+    if (ctxRef.current.state === 'suspended') {
+      ctxRef.current.resume().catch(() => undefined);
+    }
     return ctxRef.current;
   }, []);
 
-  const playTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sine', volume = 0.15) => {
+  const playTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sine', volume = 0.15, detune = 0) => {
     if (!enabledRef.current) return;
     try {
       const ctx = getCtx();
@@ -18,7 +21,9 @@ export function useSound() {
       const gain = ctx.createGain();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      osc.detune.setValueAtTime(detune, ctx.currentTime);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(volume, ctx.currentTime + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -52,40 +57,43 @@ export function useSound() {
 
   const playWeaponFire = useCallback((weapon: WeaponId) => {
     if (!enabledRef.current) return;
+    const detune = (Math.random() * 2 - 1) * 18;
     switch (weapon) {
       case 'pistol':
-        playTone(1200, 0.06, 'sine', 0.1);
-        playTone(2400, 0.04, 'sine', 0.06);
-        playNoise(0.03, 0.04);
+        playTone(980, 0.05, 'triangle', 0.07, detune);
+        playTone(1480, 0.04, 'sine', 0.05, detune * 0.6);
+        playNoise(0.025, 0.03);
         break;
       case 'rifle':
-        playTone(600, 0.1, 'sawtooth', 0.08);
-        playTone(900, 0.08, 'square', 0.05);
-        playNoise(0.06, 0.06);
+        playTone(420, 0.08, 'sawtooth', 0.08, detune);
+        playTone(760, 0.06, 'square', 0.05, detune * 0.4);
+        playTone(1180, 0.04, 'triangle', 0.03, detune * 0.3);
+        playNoise(0.04, 0.04);
         break;
       case 'blaster':
-        playTone(200, 0.2, 'sawtooth', 0.12);
-        playTone(100, 0.15, 'square', 0.08);
-        playNoise(0.1, 0.08);
-        setTimeout(() => playTone(150, 0.15, 'sine', 0.06), 50);
+        playTone(180, 0.16, 'sawtooth', 0.1, detune * 0.5);
+        playTone(96, 0.18, 'square', 0.06, detune * 0.2);
+        playNoise(0.08, 0.06);
+        setTimeout(() => playTone(240, 0.1, 'triangle', 0.05, detune * 0.4), 35);
         break;
     }
   }, [playTone, playNoise]);
 
   const playHit = useCallback(() => {
-    playTone(880, 0.08, 'sine', 0.1);
-    playTone(1320, 0.06, 'sine', 0.06);
+    playTone(920, 0.05, 'triangle', 0.08);
+    playTone(1480, 0.04, 'sine', 0.06);
   }, [playTone]);
 
   const playCritical = useCallback(() => {
-    playTone(1200, 0.1, 'sine', 0.12);
-    playTone(1800, 0.08, 'sine', 0.08);
-    setTimeout(() => playTone(2400, 0.06, 'sine', 0.06), 40);
+    playTone(1120, 0.08, 'triangle', 0.09);
+    playTone(1680, 0.07, 'sine', 0.07);
+    setTimeout(() => playTone(2240, 0.05, 'sine', 0.05), 35);
   }, [playTone]);
 
   const playMiss = useCallback(() => {
-    playTone(200, 0.2, 'sawtooth', 0.08);
-  }, [playTone]);
+    playTone(180, 0.15, 'sawtooth', 0.05);
+    playNoise(0.04, 0.02);
+  }, [playTone, playNoise]);
 
   const playTrapHit = useCallback(() => {
     playTone(150, 0.3, 'square', 0.1);
@@ -94,8 +102,8 @@ export function useSound() {
 
   const playCombo = useCallback((level: number) => {
     const base = 600 + level * 80;
-    playTone(base, 0.1, 'sine', 0.08);
-    setTimeout(() => playTone(base * 1.25, 0.08, 'sine', 0.06), 50);
+    playTone(base, 0.08, 'triangle', 0.06);
+    setTimeout(() => playTone(base * 1.22, 0.06, 'sine', 0.05), 38);
   }, [playTone]);
 
   const playButton = useCallback(() => {
