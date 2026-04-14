@@ -12,6 +12,7 @@ interface Props {
   accuracy: number;
   weapon: Weapon;
   wave: number;
+  elapsedTime: number;
   isPaused: boolean;
   onPause: () => void;
   onToggleSound: () => void;
@@ -20,7 +21,7 @@ interface Props {
 
 export const HUD: React.FC<Props> = ({
   score, combo, multiplier, timeLeft, lives, mode,
-  accuracy, weapon, wave, isPaused, onPause, onToggleSound, soundEnabled,
+  accuracy, weapon, wave, elapsedTime, isPaused, onPause, onToggleSound, soundEnabled,
 }) => {
   const dangerState = mode === 'survival' && lives <= 1;
   const modeLabel = mode === 'daily' ? 'Daily Challenge' : mode === 'survival' ? 'Survival' : 'Classic';
@@ -65,7 +66,7 @@ export const HUD: React.FC<Props> = ({
                 {mode === 'survival' ? `${timeLeft}s` : `${timeLeft}s`}
               </div>
               <div className="mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:text-xs">
-                ACC {accuracy}% {mode === 'survival' ? `• WAVE ${wave}` : ''}
+                ACC {accuracy}% {mode === 'survival' ? `• ${elapsedTime}s` : ''}
               </div>
             </div>
 
@@ -117,7 +118,7 @@ export const HUD: React.FC<Props> = ({
                 />
               </div>
               <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:text-xs">
-                Wave {wave} • {timeLeft}s alive
+                Wave {wave} • {elapsedTime}s alive
               </div>
             </div>
           ) : (

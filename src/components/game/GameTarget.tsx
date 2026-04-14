@@ -4,7 +4,7 @@ import { TARGET_CONFIGS } from '@/lib/targetTypes';
 
 interface Props {
   target: TargetType;
-  onHit: (id: string) => void;
+  onHit: (id: string, point: { x: number; y: number }) => void;
 }
 
 export const GameTarget: React.FC<Props> = ({ target, onHit }) => {
