@@ -135,6 +135,23 @@
   0% { opacity: 0.8; stroke-width: 2; }
   100% { opacity: 0; stroke-width: 0; }
 }
+@keyframes projectile-flight {
+  0% { transform: translate(0, 0) scale(0.7); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate(var(--shot-dx), var(--shot-dy)) scale(1.05); opacity: 0; }
+}
+@keyframes impact-burst {
+  0% { transform: scale(0.4); opacity: 0.95; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes impact-ring {
+  0% { transform: scale(0.6); opacity: 0.85; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes crosshair-pulse {
+  0% { opacity: 0.75; transform: scale(0.75); }
+  100% { opacity: 0; transform: scale(1.45); }
+}
 
 /* === Screen Transitions === */
 @keyframes screen-in {
